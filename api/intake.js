@@ -1,5 +1,5 @@
 // api/intake.js
-// Простейший HTTP-endpoint для Инста-бота на Vercel
+// HTTP-endpoint для Инста-бота на Vercel с логами для дебага
 
 module.exports = async (req, res) => {
   // 1) Проверка вебхука от Instagram (GET с hub.* параметрами)
@@ -9,17 +9,22 @@ module.exports = async (req, res) => {
     const challenge = req.query["hub.challenge"];
     const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 
+    console.log("WEBHOOK VERIFY CALL:", {
+      mode,
+      token,
+      challenge,
+      VERIFY_TOKEN
+    });
+
     // Instagram шлёт это, когда проверяет callback URL
     if (mode === "subscribe" && token === VERIFY_TOKEN && challenge) {
-      console.log("WEBHOOK VERIFIED OK");
-      return res.status(200).send(challenge);
+      console.log("WEBHOOK VERIFIED OK, SENDING CHALLENGE");
+      res.setHeader("Content-Type", "text/plain");
+      return res.status(200).send(String(challenge));
     }
 
-    // Обычный GET (когда ты просто открываешь URL в браузере)
-    return res.status(200).json({
-      ok: true,
-      message: "Instagram Iron James bot is running. Send POST JSON to this URL."
-    });
+    console.log("WEBHOOK VERIFY FAILED");
+    return res.status(403).send("Forbidden");
   }
 
   // 2) Основная логика — обработка входящих сообщений (POST)
@@ -30,7 +35,6 @@ module.exports = async (req, res) => {
 
       console.log("Incoming Instagram payload:", body);
 
-      // Пока супер-простой автоответ без ИИ.
       const reply =
         "Hi, this is Iron James intake bot.\n\n" +
         "To review your accident case, please reply in ONE message with:\n" +
