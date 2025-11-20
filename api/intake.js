@@ -1,34 +1,46 @@
 // api/intake.js
-// Вебхук для Инста-бота на Vercel
+// Вебхук для Instagram Iron James бота на Vercel
 
 module.exports = async (req, res) => {
-  // 1) ПРОВЕРКА ВЕБХУКА ОТ META (GET с hub.* параметрами)
+  // ========= 1. Верификация вебхука (GET) =========
   if (req.method === "GET") {
     const mode = req.query["hub.mode"];
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
 
-    console.log("WEBHOOK VERIFY REQUEST:", { mode, token, challenge });
+    console.log("WEBHOOK VERIFY", {
+      mode,
+      token,
+      envVerifyToken: process.env.VERIFY_TOKEN,
+    });
 
+    // Если всё совпало — отдаем challenge
     if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
-      console.log("WEBHOOK VERIFIED OK");
-      // Meta ждёт тут просто challenge в ответе
-      return res.status(200).send(challenge);
-    } else {
-      console.warn("WEBHOOK VERIFY FAILED");
-      return res.status(403).send("Verification failed");
+      return res.status(200).send(challenge || "ok");
     }
+
+    // ВРЕМЕННЫЙ дебаг (если открыть ?debug=1)
+    if (req.query.debug === "1") {
+      return res.status(200).json({
+        mode,
+        token,
+        envVerifyToken: process.env.VERIFY_TOKEN || null,
+      });
+    }
+
+    return res.status(403).send("Verification failed");
   }
 
-  // 2) ПРОСТАЯ ПРОВЕРКА, ЧТО ЭНДПОИНТ ЖИВОЙ (для браузера и т.п.)
+  // ========= 2. Хелс-чек для браузера (не POST) =========
   if (req.method !== "POST") {
     return res.status(200).json({
       ok: true,
-      message: "Instagram Iron James bot is running. Send POST JSON to this URL.",
+      message:
+        "Instagram Iron James bot is running. Send POST JSON to this URL.",
     });
   }
 
-  // 3) ОБРАБОТКА СООБЩЕНИЙ (пока просто автоответ)
+  // ========= 3. Обработка сообщений (POST) =========
   try {
     const body = req.body || {};
     const text = body.message || body.text || "";
