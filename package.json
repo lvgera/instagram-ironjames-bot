@@ -1,0 +1,11 @@
+{
+  "name": "instagram-ironjames-bot",
+  "version": "1.0.0",
+  "main": "api/intake.js",
+  "scripts": {
+    "start": "node api/intake.js"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.8"
+  }
+}
